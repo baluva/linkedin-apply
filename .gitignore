@@ -1,0 +1,16 @@
+# données perso et état local : jamais versionnés
+config.toml
+browser-profile/
+applications.csv
+unanswered.csv
+entreprises.csv
+memoire.json
+apprentissage.json
+envois/
+lettres/
+diag/
+tests/diag/
+assets/logos/
+*.pdf
+offre_*.txt
+__pycache__/

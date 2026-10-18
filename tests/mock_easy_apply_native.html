@@ -1,0 +1,40 @@
+<!doctype html><html lang="fr"><meta charset="utf-8"><body>
+<h1>Alternance Data Analyst</h1>
+<div class="job-details-jobs-unified-top-card__company-name">Acme Data</div>
+<div id="job-details">Analyse de données, dashboards Power BI, SQL, KPIs.</div>
+<button class="jobs-apply-button" aria-label="Candidature simplifiée pour Alternance Data Analyst" onclick="document.getElementById('m').showModal()">Candidature simplifiée</button>
+<dialog id="m">
+ <h2>Postuler chez Acme Data</h2>
+ <button aria-label="Ignorer" onclick="document.getElementById('m').close()">x</button>
+ <form onsubmit="return false">
+ <div class="step" id="s1">
+   <label for="ph">Numéro de téléphone mobile</label><input id="ph" type="text" required>
+   <label for="em">Adresse e-mail</label><select id="em"><option>Sélectionner une option</option><option>prenom.nom@exemple.fr</option></select>
+   <div class="upload">Téléverser un CV <input type="file" id="cv"></div>
+   <button type="button" onclick="go(2)">Suivant</button>
+ </div>
+ <div class="step" id="s2" style="display:none">
+   <label for="yrs">Combien d'années d'expérience avez-vous avec Python ?</label><input id="yrs" type="number" required>
+   <fieldset><legend>Parlez-vous anglais couramment ?</legend>
+     <input type="radio" name="en" id="en1" value="Oui"><label for="en1">Oui</label>
+     <input type="radio" name="en" id="en2" value="Non"><label for="en2">Non</label></fieldset>
+   <label for="lvl">Quel est votre niveau d'anglais ?</label><select id="lvl"><option>Sélectionner une option</option><option>Débutant</option><option>Courant</option><option>Bilingue</option></select>
+   <label for="cl">Lettre de motivation</label><textarea id="cl" required></textarea>
+   <div class="upload">Lettre de motivation (PDF) <input type="file" id="clf"></div>
+   <input type="checkbox" id="ok" required><label for="ok">J'accepte la politique de confidentialité</label>
+   <button type="button" onclick="go(3)">Vérifier</button>
+ </div>
+ <div class="step" id="s3" style="display:none">
+   <input type="checkbox" id="follow-company-checkbox" checked><label for="follow-company-checkbox">Suivre Acme</label>
+   <button type="button" onclick="submitApp()">Envoyer la candidature</button>
+ </div>
+ </form>
+</dialog>
+<script>
+function go(n){document.querySelectorAll('.step').forEach(s=>s.style.display='none');document.getElementById('s'+n).style.display='block'}
+function submitApp(){const v=id=>document.getElementById(id);window.result={
+ phone:v('ph').value,email:v('em').value,cv:v('cv').files.length,yrs:v('yrs').value,
+ en:(document.querySelector('input[name=en]:checked')||{}).value,lvl:v('lvl').value,
+ cl:v('cl').value.slice(0,60),clf:v('clf').files[0]&&v('clf').files[0].name,ok:v('ok').checked,
+ follow:v('follow-company-checkbox').checked};document.getElementById('m').close()}
+</script></body></html>

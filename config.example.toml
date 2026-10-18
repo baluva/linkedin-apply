@@ -1,0 +1,211 @@
+# Configuration du bot de candidature LinkedIn (Candidature simplifiée / Easy Apply)
+
+[profile]
+first_name = "Prénom"
+last_name = "Nom"
+email = "prenom.nom@exemple.fr"
+phone = "0600000000"
+city = "Marseille"
+# adresse affichée en haut de la lettre
+address = "1 rue Exemple, 13000 Marseille"
+# le numéro du CV remplace celui que LinkedIn pré-remplit depuis ton profil
+forcer_telephone = true
+cv_path = 'CV.pdf'
+
+[browser]
+# "opera" (Opera GX détecté automatiquement) ou "chrome"
+name = "opera"
+# chemin forcé vers opera.exe si la détection échoue (laisser vide sinon)
+path = ""
+
+[apprentissage]
+# question inconnue pendant une candidature : le bot te la pose dans le terminal et retient ta réponse
+# (memoire.json). Sans réponse au bout de delai_reponse secondes, il passe l'offre et la retentera.
+poser_questions = true
+delai_reponse = 90
+# les mots-clés qui ont donné le plus de candidatures aux passages précédents sont cherchés en premier
+# (stats dans apprentissage.json, bilan : python apprentissage.py)
+ordonner_mots_cles = true
+
+[lettres]
+# false : chaque lettre PDF est supprimée dès qu'elle a été envoyée (ou jointe au brouillon)
+garder = false
+
+[cv]
+# Réponses « années d'expérience » : outils du CV -> annees_par_outil, outil absent du CV -> 0,
+# question générale -> annees_experience
+annees_experience = 1
+annees_par_outil = 1
+competences = ["python", "sql", "r", "sas", "c#", "java", "php", "javascript", "go", "pandas", "numpy",
+  "scikit-learn", "scikit", "xgboost", "random forest", "lightgbm", "prophet", "machine learning",
+  "statistiques", "forecasting", "data visualization", "llm", "nlp", "prompt", "claude", "gemini",
+  "mongodb", "postgresql", "postgres", "nosql", "supabase", "etl", "reporting", "kpi", "superset",
+  "streamlit", "dbt", "duckdb", "docker", "git", "github", "gitlab", "linux", "windows server",
+  "fastapi", "agile", "ci/cd", "mlflow", "evidently", "hugging face", "ollama", "whisper",
+  "data", "données", "intelligence artificielle", "ia", "ai", "cybersécurité", "vps"]
+
+[search]
+# Une recherche par mot-clé, toutes avec le filtre « Candidature simplifiée »
+# Recherche booléenne LinkedIn (guillemets, OR, AND) : sans ça, « alternance data analyst » renvoie
+# surtout des CDI. Chaque ligne = une recherche.
+keywords = [
+  '(alternance OR alternant OR apprentissage OR apprenti) AND ("data analyst" OR "data analytics" OR "business intelligence" OR "power bi" OR BI)',
+  '(alternance OR alternant OR apprentissage OR apprenti) AND ("data engineer" OR "data engineering" OR ETL OR "big data")',
+  '(alternance OR alternant OR apprentissage OR apprenti) AND ("data scientist" OR "data science" OR "machine learning" OR MLOps)',
+  '(alternance OR alternant OR apprentissage OR apprenti) AND (IA OR "intelligence artificielle" OR LLM OR NLP OR "IA générative" OR "computer vision")',
+  '(alternance OR alternant OR apprentissage OR apprenti) AND ("développeur python" OR "developpeur python" OR "python developer" OR "développeur IA" OR "ingénieur IA")',
+  '(alternance OR alternant OR apprentissage OR apprenti) AND ("développeur data" OR "data developer" OR automatisation OR scripting OR API)',
+  '(alternance OR alternant OR apprentissage OR apprenti) AND (data OR données OR python)',
+  '(apprenticeship OR "work-study" OR apprentice) AND (data OR AI OR "machine learning" OR python)',
+  '(stage OR stagiaire) AND ("data analyst" OR "data scientist" OR "data engineer" OR "business intelligence" OR "power bi")',
+  '(stage OR stagiaire) AND (IA OR "intelligence artificielle" OR "machine learning" OR LLM OR NLP OR "computer vision")',
+  '(stage OR stagiaire) AND ("développeur python" OR "developpeur python" OR "développeur IA" OR "ingénieur IA" OR MLOps)',
+  '(internship OR intern) AND (data OR AI OR "machine learning" OR python)',
+]
+# Deuxième série, lancée seulement si la première n'a pas rempli le quota de candidatures :
+# recherches plus larges (dev, cloud, études, anglais), les filtres [filters] écartent quand même
+# tout ce qui n'est pas de l'alternance.
+keywords_elargis = [
+  '(alternance OR alternant OR apprentissage OR apprenti) AND (développeur OR développeuse OR "développement logiciel" OR software OR "full stack" OR backend)',
+  '(alternance OR alternant OR apprentissage OR apprenti) AND (python OR django OR flask OR fastapi OR streamlit OR "web scraping")',
+  '(alternance OR alternant OR apprentissage OR apprenti) AND (devops OR cloud OR azure OR aws OR docker OR kubernetes OR "ci/cd")',
+  '(alternance OR alternant OR apprentissage OR apprenti) AND (analyste OR statistiques OR reporting OR excel OR "études" OR "chargé de projet data")',
+  '(alternance OR alternant OR apprentissage OR apprenti) AND (informatique OR digital OR "business analyst" OR "chef de projet technique")',
+  'alternance (data OR IA OR python OR développeur)',
+  '(apprentice OR apprenticeship OR "work-study") AND (developer OR engineer OR analyst OR "data science")',
+]
+location = "France"
+# r86400 = 24 h, r604800 = 7 jours, r2592000 = 30 jours
+posted_within = "r2592000"
+pages_per_keyword = 4
+# nombre de candidatures en dessous duquel on enchaîne sur keywords_elargis
+elargir_si_moins_de = 15
+# commencer par les offres publiées dans les dernières 24 h (peu de candidats, réponse plus probable)
+offres_24h_d_abord = true
+pages_24h = 2
+# puis passer par le filtre LinkedIn « Moins de 10 candidats »
+peu_de_candidats_d_abord = true
+
+[filters]
+# L'offre est ignorée si son titre contient un de ces mots (insensible à la casse)
+exclude_title = ["senior", "lead", "manager", "cdi", "freelance", "commercial", "business developer"]
+# Les stages sont acceptés aussi : un de ces mots dans le TITRE suffit (mot entier)
+stage_title_any = ["stage", "stagiaire", "internship", "intern", "pfe", "stage de fin d'études"]
+# Au moins un de ces mots doit apparaître dans le titre OU la description (vide = tout accepter)
+require_title_any = ["alternance", "alternant", "alternante", "apprenti", "apprentie", "apprentissage",
+                     "apprentice", "apprenticeship", "work-study", "work study", "contrat pro",
+                     "contrat de professionnalisation"]
+# Le titre doit aussi contenir un mot du métier (mot entier, insensible à la casse). Sans ça, les
+# recherches larges remontaient des alternances de secrétaire médical, paie, RH... (vide = désactivé)
+require_domain_title_any = ["data", "donnée", "données", "ia", "ai", "intelligence artificielle",
+  "machine learning", "ml", "mlops", "llm", "nlp", "computer vision", "python", "bi", "power bi",
+  "business intelligence", "analyst", "analyste", "analytics", "statistique", "statistiques",
+  "statisticien", "big data", "développeur", "développeuse", "developpeur", "developer", "dev",
+  "développement", "logiciel", "software", "full stack", "fullstack", "backend", "back-end",
+  "web", "informatique", "it", "cloud", "devops", "automatisation", "digital", "digitale", "digitaux",
+  "numérique", "systèmes d'information", "cyber",
+  "cybersécurité"]
+# Écoles et organismes de formation : leurs « offres » servent à recruter des élèves
+# (IFAE a reçu 30 candidatures en septembre pour secrétariat médical, paie, RH...)
+exclude_companies = ["IFAE", "Ironhack", "EEMI", "Galileo Global Education", "Groupe Alternance",
+                     "Cours Péret", "SOLEMN"]
+# Offre ignorée si la description contient une de ces expressions (signes d'une école qui recrute)
+exclude_description_any = ["nos entreprises partenaires", "entreprises partenaires de l'école",
+  "frais de scolarité", "notre école", "notre campus", "nos campus", "notre centre de formation",
+  "rejoindre notre formation", "intégrer notre formation", "formation 100% financée",
+  "inscris-toi", "dossier d'admission"]
+# Au-delà, les autres offres de la même entreprise attendent le passage suivant (0 = pas de limite)
+max_par_entreprise_par_passage = 2
+# offres ignorées au-delà de ce nombre de candidats (LinkedIn affiche « Plus de 100 » au-delà de 100).
+# 0 = pas de limite
+max_candidats = 50
+
+[limits]
+max_applications_per_run = 15
+delay_between_actions = [2.0, 5.0]    # secondes, aléatoire
+delay_between_jobs = [25.0, 70.0]     # secondes, aléatoire
+max_steps_per_form = 12
+# une offre qui a échoué (timeout, formulaire refusé...) autant de fois n'est plus retentée
+# (HELPLINE et Devoteam avaient été retentées 7 fois chacune, toujours en timeout)
+max_tentatives = 2
+
+# Réponses aux questions des formulaires. Clé = regex testée sur le libellé de la question
+# (insensible à la casse), valeur = réponse. La première règle qui correspond gagne.
+# Une question obligatoire sans réponse fait abandonner l'offre : elle est notée dans
+# unanswered.csv pour que tu ajoutes la règle ici.
+[answers]
+"permis|driving licen[cs]e|driver.s licen[cs]e" = "Oui"   # permis B (CV)
+"anglais|english" = "Bilingue"
+"arabe|arabic" = "Natif"
+"niveau.*fran[cç]ais|french" = "Natif"
+"alternance|apprenti|work.study|contrat de professionnalisation" = "Oui"
+"convention de stage|internship agreement" = "Oui"
+"dur[ée]e.*stage|stage.*dur[ée]e|internship (duration|length)|combien de mois" = "6 mois"
+"stage|stagiaire|internship|intern" = "Oui"
+"rythme" = "2 semaines en entreprise / 1 semaine à l'école"
+"commencer|start immediately|imm[ée]diatement|asap|d[èe]s que possible" = "Oui"
+"disponib|date de d[ée]but|start date|notice period|pr[ée]avis" = "Immédiatement"
+"t[ée]l[ée]travail|remote|hybrid|sur site|on.?site|d[ée]m[ée]nag|relocat|commute|trajet" = "Oui"
+"dipl[oô]me|degree|bachelor|niveau d.[ée]tudes|education" = "Bac+3"
+"[ée]cole|school|university|universit[ée]" = "Ynov"
+"python|sql|pandas|scikit|machine learning|docker|git|linux|fastapi|dbt|duckdb|postgres|mongodb|superset|streamlit|llm|nlp|data" = "Oui"
+"linkedin" = "https://www.linkedin.com/in/ton-profil/"
+"github" = "https://github.com/baluva"
+"portfolio|site web|website|personal site" = "https://baluva.github.io/portfolio"
+"ville|city|localisation|location" = "Marseille"
+"accept|consent|conditions|politique de confidentialit|privacy|j.accepte|i agree" = "Oui"
+
+# ------------------------------------------------------------ candidatures spontanées
+[spontane]
+# apprendre des réponses reçues : envoyer d'abord aux secteurs / tailles / départements qui répondent,
+# y chercher d'abord de nouvelles boîtes (bilan : python apprentissage.py)
+apprendre = true
+# 13 Bouches-du-Rhône, 83 Var, 84 Vaucluse, 06 Alpes-Maritimes, 30 Gard, 34 Hérault
+# ajoute "75", "92" pour Paris / Hauts-de-Seine
+departements = ["13", "83", "84", "06", "30", "34"]
+# codes NAF : programmation, conseil informatique, services informatiques, traitement de données,
+# édition de logiciels, portails web, conseil en gestion, R&D, ingénierie, études de marché
+naf = ["62.01Z", "62.02A", "62.03Z", "62.09Z", "63.11Z", "63.12Z", "58.29A", "58.29C",
+       "70.22Z", "72.19Z", "71.12B", "73.20Z"]
+# tranches INSEE : 11 = 10-19 salariés, 12 = 20-49, 21 = 50-99, 22 = 100-199, 31 = 200-249, 32 = 250-499,
+# 41 = 500-999, 42 = 1000-1999, 51 = 2000-4999
+# Plus de 1000 salariés retiré le 12/10 : 58 boîtes cherchées, 7 emails, 0 réponse (tout passe par
+# leur portail carrière). Les petites structures répondent le plus (20-49 : 5 réponses sur 33).
+tranches_effectif = ["11", "12", "21", "22", "31", "32", "41"]
+pages_par_recherche = 2
+
+[email]
+# "outlook" : envoie depuis Outlook (compte ci-dessous, déjà connecté), "smtp" : serveur SMTP
+backend = "outlook"
+from = "prenom.nom@exemple.fr"
+smtp_host = "smtp.gmail.com"
+smtp_port = 465
+# (smtp uniquement) mot de passe d'application, jamais écrit ici : variable d'environnement
+password_env = "LINKEDIN_APPLY_SMTP_PASSWORD"
+max_par_passage = 15
+delay_between_sends = [60.0, 180.0]
+# python spontane.py relance : une seule relance, au moins ce nombre de jours après l'envoi, sans réponse
+relance_apres_jours = 10
+relance_body = """Bonjour,
+
+Je me permets de revenir vers vous au sujet de ma candidature spontanée envoyée le {date}, pour une alternance data et IA. Je suis toujours disponible et j'aimerais vraiment en discuter avec vous.
+
+Si vous n'êtes pas la bonne personne, est-ce que vous pourriez transférer ce message à la personne en charge du recrutement ? Merci beaucoup.
+
+Bonne journée,
+Prénom Nom
+06 00 00 00 00
+"""
+subject = "Candidature spontanée : alternance data et IA"
+body = """Madame, Monsieur,
+
+Je suis en M1 Mastère Expert en IA à Ynov et je cherche une alternance (2 semaines en entreprise, 1 semaine à l'école), disponible tout de suite.
+
+Je me permets de vous écrire directement car le travail de {company} m'intéresse, même sans offre publiée. Vous trouverez en pièces jointes mon CV et ma lettre de motivation. Je viens de terminer un stage de quatre mois chez trITon (application d'analyse vidéo par IA, pipelines de données, tableau de bord qualité). Parmi mes projets, WattCast prévoit la consommation électrique française avec 1,90 % d'erreur contre 1,97 % pour RTE. Tout est sur mon portfolio : baluva.github.io/portfolio
+
+Si une alternance est envisageable chez vous, je serais ravi d'en parler, même brièvement.
+
+Bonne journée,
+Prénom Nom
+06 00 00 00 00
+"""
