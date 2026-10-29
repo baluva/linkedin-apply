@@ -9,7 +9,7 @@ motivation PDF adaptée à chaque offre.
 ## Installation
 ```
 pip install playwright
-cp config.example.toml config.toml   # puis remplir [profile], le chemin du CV et [email]
+cp config.example.toml config.toml   # puis remplir [profile] et le chemin du CV
 ```
 (Opera GX ou Chrome doit être installé, il est utilisé directement. `config.toml`, l'historique,
 les lettres et la session du navigateur restent en local, ils ne sont pas versionnés.)
@@ -25,22 +25,14 @@ python lettre.py --company "Linedata" --title "HR Analytics & Rewards Apprentice
 python lettre.py --company "Linedata" --site linedata.com --ville Aix-en-Provence   # spontanée
 ```
 
-## Candidatures spontanées (Outlook)
-Double-clic sur **Envoyer candidatures** (Bureau) : cherche des entreprises data/IA dans les
-départements choisis (API officielle recherche-entreprises), trouve un email générique sur leur
-site (recrutement@, rh@, contact@...), affiche la liste, puis envoie depuis Outlook le CV et une
-lettre spontanée générée pour chaque boîte, avec une pause de 1 à 3 min entre deux envois.
-```
-python spontane.py run                     # ce que fait le raccourci
-python spontane.py scrape --max 40         # remplir entreprises.csv seulement
-python spontane.py send --dry-run --max 5  # créer des brouillons Outlook sans envoyer
-```
-Réglages dans `config.toml` : `[spontane]` (départements, secteurs NAF, tailles) et `[email]`.
+## Candidatures spontanées
+L'envoi de candidatures spontanées par email (Outlook) est dans un repo à part :
+[candidatures-spontanees](https://github.com/baluva/candidatures-spontanees).
 
 ## La lettre
 Lettre classique sur une page : logo Ynov et coordonnées à gauche, logo de l'entreprise et
 destinataire à droite, objet (avec la réf. de l'offre si elle y figure), corps justifié.
-Le logo vient de l'offre LinkedIn, ou de l'icône du site pour les spontanées ; il est gardé dans
+Le logo vient de l'offre LinkedIn ; il est gardé dans
 `assets/logos/`. Sans logo trouvé, seul le nom de l'entreprise s'affiche. Les paragraphes sont
 choisis selon le thème détecté (analyse, data engineering, IA, dev, RH/finance, supply, sécurité,
 prévision) et le texte rétrécit tout seul pour tenir sur une page.
@@ -65,19 +57,14 @@ prévision) et le texte rétrécit tout seul pour tenir sur une page.
   `[answers]` et l'offre sera retentée au prochain passage.
 - `lettres/` : une lettre PDF par entreprise
 - `assets/` : logo Ynov de l'en-tête, et `logos/` les logos d'entreprises déjà téléchargés
-- `entreprises.csv` : boîtes trouvées, email, statut d'envoi (supprime une ligne pour l'exclure)
 - `tests/test_mock.py` : teste le remplissage sur une fausse modale, sans LinkedIn
 
 ## Apprentissage automatique (sans IA payante)
 
-Les deux bots apprennent de leurs résultats (`apprentissage.py`, état dans `apprentissage.json`) :
+Le bot apprend de ses résultats (`apprentissage.py`, état dans `apprentissage.json`) : rendement de
+chaque mot-clé (offres vues → pertinentes → envoyées), les plus rentables sont cherchés en premier au
+passage suivant. Une réponse donnée une fois (`--learn` ou dans le terminal) resservira pour la même
+question posée par une autre entreprise (« Comment avez-vous entendu parler de X ? »).
 
-- **LinkedIn** : rendement de chaque mot-clé (offres vues → pertinentes → envoyées) ; les plus rentables
-  sont cherchés en premier au passage suivant. Une réponse donnée une fois (`--learn` ou dans le terminal)
-  resservira pour la même question posée par une autre entreprise (« Comment avez-vous entendu parler de X ? »).
-- **Spontané** : taux de vraies réponses par code NAF, taille et département (lu dans `entreprises.csv`) ;
-  envoi et recherche dans les segments qui répondent d'abord. Les pages où l'email est le plus souvent
-  trouvé (/contact, /mentions-legales…) sont visitées en premier.
-
-Rien n'est supprimé : un segment peu rentable passe simplement après. Bilan : `python apprentissage.py`.
-Désactiver : `ordonner_mots_cles = false` ([apprentissage]) et `apprendre = false` ([spontane]).
+Rien n'est supprimé : un mot-clé peu rentable passe simplement après. Bilan : `python apprentissage.py`.
+Désactiver : `ordonner_mots_cles = false` ([apprentissage]).
