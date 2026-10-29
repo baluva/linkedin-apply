@@ -85,6 +85,10 @@ offres_24h_d_abord = true
 pages_24h = 2
 # puis passer par le filtre LinkedIn « Moins de 10 candidats »
 peu_de_candidats_d_abord = true
+# true : UNIQUEMENT les offres « Moins de 10 candidats » (filtre de recherche + revérifié sur l'offre)
+uniquement_moins_de_10 = false
+# Mode de travail (filtre LinkedIn f_WT) : "2" = télétravail, "3" = hybride, "1" = sur site, "" = pas de filtre
+teletravail = ""
 
 [filters]
 # L'offre est ignorée si son titre contient un de ces mots (insensible à la casse)

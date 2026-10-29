@@ -190,6 +190,42 @@ def log(msg):
     print(f"[{datetime.now():%H:%M:%S}] {msg}", flush=True)
 
 
+if os.name == "nt":
+    os.system("")  # active les couleurs ANSI dans la console Windows
+
+VERT, JAUNE, GRAS, FIN = "\033[92m", "\033[93m", "\033[1m", "\033[0m"
+
+
+def titre_console(texte):
+    if os.name == "nt":
+        import ctypes
+        ctypes.windll.kernel32.SetConsoleTitleW(texte)
+
+
+def annonce_candidature(numero, total, status, title, company, nb, job_id):
+    """Encadré bien visible dans le terminal à chaque candidature envoyée (jaune en dry-run)."""
+    couleur = VERT if status == "envoyée" else JAUNE
+    entete = f"CANDIDATURE ENVOYÉE  {numero}/{total}" if status == "envoyée" else f"DRY-RUN  {numero}/{total} (non envoyée)"
+    lignes = [
+        entete,
+        f"Poste      : {title}",
+        f"Entreprise : {company}",
+        f"Candidats  : {'inconnu' if nb is None else nb if nb <= 100 else 'plus de 100'}",
+        f"Offre      : https://www.linkedin.com/jobs/view/{job_id}/",
+        f"Heure      : {datetime.now():%H:%M:%S}",
+    ]
+    largeur = max(len(l) for l in lignes) + 2
+    print(flush=True)
+    print(f"{couleur}{GRAS}  ╔{'═' * largeur}╗", flush=True)
+    for i, l in enumerate(lignes):
+        print(f"  ║ {l.ljust(largeur - 1)}║", flush=True)
+        if i == 0:
+            print(f"  ╟{'─' * largeur}╢", flush=True)
+    print(f"  ╚{'═' * largeur}╝{FIN}", flush=True)
+    print(flush=True)
+    titre_console(f"Candidatures LinkedIn : {numero}/{total} {'envoyées' if status == 'envoyée' else 'en dry-run'}")
+
+
 def pause(bounds):
     time.sleep(random.uniform(*bounds))
 
@@ -273,6 +309,7 @@ class Bot:
         self.answers = [(re.compile(k, re.I), str(v)) for k, v in cfg["answers"].items()]
         self.act_delay = cfg["limits"]["delay_between_actions"]
         self.job = {}
+        self.moins_de_10 = cfg["search"].get("uniquement_moins_de_10", False)
 
     # ---------- recherche ----------
     def search_urls(self, elargi=False):
@@ -284,13 +321,23 @@ class Bot:
         if self.cfg["apprentissage"].get("ordonner_mots_cles", True):
             mots = apprentissage.ordonner_mots_cles(mots)  # les plus rentables aux passages précédents d'abord
         pages = s["pages_per_keyword"]
+        # f_WT : 2 = télétravail, 3 = hybride, 1 = sur site ("2,3" = télétravail ou hybride)
+        wt = f"&f_WT={quote_plus(str(s['teletravail']))}" if s.get("teletravail") else ""
         passes = []
-        if s.get("offres_24h_d_abord", True):
-            # sur 24 h il y a rarement plus d'une ou deux pages, et le filtre f_EA y est inutile
-            passes.append(("24 h", "r86400", "", s.get("pages_24h", 2)))
-        if s.get("peu_de_candidats_d_abord", True):
-            passes.append(("peu de candidats", s["posted_within"], "&f_EA=true", pages))
-        passes.append(("toutes", s["posted_within"], "", pages))
+        if self.moins_de_10:
+            # seulement le filtre LinkedIn « Moins de 10 candidats », sur 24 h puis sur toute la période
+            if s.get("offres_24h_d_abord", True):
+                passes.append(("24 h, moins de 10 candidats", "r86400", "&f_EA=true", s.get("pages_24h", 2)))
+            passes.append(("moins de 10 candidats", s["posted_within"], "&f_EA=true", pages))
+        else:
+            if s.get("offres_24h_d_abord", True):
+                # sur 24 h il y a rarement plus d'une ou deux pages, et le filtre f_EA y est inutile
+                passes.append(("24 h", "r86400", "", s.get("pages_24h", 2)))
+            if s.get("peu_de_candidats_d_abord", True):
+                passes.append(("peu de candidats", s["posted_within"], "&f_EA=true", pages))
+            passes.append(("toutes", s["posted_within"], "", pages))
+        if wt:
+            passes = [(f"{name}, télétravail", tpr, extra + wt, n) for name, tpr, extra, n in passes]
         for pass_name, tpr, extra, nb_pages in passes:
             for kw in mots:
                 for page_idx in range(nb_pages):
@@ -303,6 +350,16 @@ class Bot:
     def collect_job_ids(self, url):
         self.page.goto(url, wait_until="domcontentloaded")
         pause(self.act_delay)
+        # LinkedIn redirige parfois vers une recherche sans les filtres : on ne ramasse pas ces offres-là
+        perdus = [f for f in ("f_EA=true", "f_WT=") if f in url and f not in self.page.url]
+        if perdus:
+            log(f"  filtre(s) {', '.join(perdus)} retiré(s) par LinkedIn ({self.page.url[:120]}), recherche ignorée")
+            return []
+        # zéro résultat : LinkedIn remplit la page avec « Offres d'emploi qui pourraient vous intéresser »,
+        # des suggestions sans aucun filtre (presque toutes externes), qu'on ne doit pas ramasser
+        if self.page.get_by_text(re.compile(r"aucune offre d.emploi correspondante|no matching jobs found", re.I)).count():
+            log("  aucune offre pour cette recherche")
+            return []
         # la liste est chargée au fil du scroll
         for _ in range(8):
             self.page.mouse.wheel(0, 1500)
@@ -350,6 +407,8 @@ class Bot:
         if cap and self.per_company.get(company.lower(), 0) >= cap:
             return False, f"déjà {cap} candidatures chez {company} ce passage"
         limit = f.get("max_candidats")
+        if self.moins_de_10:
+            limit = 9  # le filtre de recherche n'est pas toujours à jour : on revérifie sur l'offre
         if limit and self.applicants is not None and self.applicants > limit:
             return False, f"trop de candidats ({'plus de 100' if self.applicants > 100 else self.applicants})"
         return True, ""
@@ -779,10 +838,14 @@ def ensure_logged_in(page, wait_for_login):
         try:
             page.goto("https://www.linkedin.com/feed/", wait_until="domcontentloaded")
             break
-        except Exception:
+        except Exception as e:
             if attempt == 2:
+                if "ERR_HTTP_RESPONSE_CODE_FAILURE" in str(e):
+                    # LinkedIn renvoie une erreur HTTP (souvent 429) après trop de pages chargées d'affilée
+                    log("LinkedIn refuse les pages pour l'instant (limitation temporaire). Réessaie dans 1 à 2 h.")
+                    return False
                 raise
-            time.sleep(2)
+            time.sleep(10)
     time.sleep(3)
     if "/feed" in page.url:
         return True
@@ -889,7 +952,7 @@ def main():
                             done += 1
                             apprentissage.compter_mot_cle(mot, envoyees=1)
                             bot.per_company[company.lower()] = bot.per_company.get(company.lower(), 0) + 1
-                            log(f"  + {status} : {title} / {company}")
+                            annonce_candidature(done, max_apps, status, title, company, nb, job_id)
                         except SkipJob as e:
                             status = f"abandon : {e}"
                             log(f"  x {title} / {company} -> {e}")
@@ -914,11 +977,17 @@ def main():
                         bilan[motif] = bilan.get(motif, 0) + 1
                         pause(cfg["limits"]["delay_between_jobs"])
 
-            parcourir(bot.search_urls())
-            seuil = cfg["search"].get("elargir_si_moins_de", max_apps)
-            if done < min(seuil, max_apps) and cfg["search"].get("keywords_elargis"):
-                log(f"Recherche élargie ({done} candidature(s) seulement) : mots-clés plus larges")
-                parcourir(bot.search_urls(elargi=True))
+            try:
+                parcourir(bot.search_urls())
+                seuil = cfg["search"].get("elargir_si_moins_de", max_apps)
+                if done < min(seuil, max_apps) and cfg["search"].get("keywords_elargis"):
+                    log(f"Recherche élargie ({done} candidature(s) seulement) : mots-clés plus larges")
+                    parcourir(bot.search_urls(elargi=True))
+            except Exception as e:
+                # la recherche d'emplois peut rester bloquée (souvent 429) alors que le fil s'ouvre déjà
+                if "ERR_HTTP_RESPONSE_CODE_FAILURE" not in str(e):
+                    raise
+                log("LinkedIn refuse les pages pour l'instant (limitation temporaire). Réessaie dans 1 à 2 h.")
             log(f"Terminé : {done} candidature(s). Détail dans applications.csv")
             for motif, n in sorted(bilan.items(), key=lambda kv: -kv[1]):
                 log(f"    {n:3}  {motif}")
